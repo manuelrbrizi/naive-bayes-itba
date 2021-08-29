@@ -1,8 +1,4 @@
-import numpy as np
 import pandas as pd
-import scipy.stats as spy
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 # For probability arrays, array[0] is scottish and array[1] is english #
