@@ -180,9 +180,14 @@ def accuracy(array, categories):
                                 (category_precision[category] + category_recall[category])
         category_tp_rate[category] = TP / (TP + FN)
         category_fp_rate[category] = FP / (FP + TN)
-        print("acuracy of ", category, category_accuracy[category])
-        print("precision of ", category, category_precision[category])
-
+        print(category, ":")
+        print("acuracy: ", category_accuracy[category])
+        print("precision: ", category_precision[category])
+        print("recall: ", category_recall[category])
+        print("tp rate: ", category_tp_rate[category])
+        print("fp rate: ", category_fp_rate[category])
+        print("\n")
+        return category_accuracy, category_precision, category_recall, category_f1, category_tp_rate, category_fp_rate
 
 dfTest, dfTrain = read_news(0.10)
 df = pd.read_csv("test.csv")
