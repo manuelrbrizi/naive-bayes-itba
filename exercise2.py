@@ -1,5 +1,9 @@
 import pandas as pd
 import string
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sn
+
 
 def splitDf(percentage_test, df):
     grouped = df.groupby(df.categoria)
@@ -21,7 +25,7 @@ def read_news(percentage_test):
     df.drop(index_names, inplace=True)
     index_names = df[df['categoria'] == "Destacadas"].index
     df.drop(index_names, inplace=True)
-    df.dropna(subset = ["categoria"], inplace=True)
+    df.dropna(subset=["categoria"], inplace=True)
     dfTest, dfTrain = splitDf(percentage_test, df)
     dfTest.to_csv("testSample.csv", encoding='utf-8')
     dfTrain.to_csv("trainSample.csv", encoding='utf-8')
@@ -67,7 +71,7 @@ def category_probability(df):
     dic = {}
     total = df['categoria'].count()
     for category in categories:
-        dic[category] = (df[df["categoria"] == category].count())[0]/total
+        dic[category] = (df[df["categoria"] == category].count())[0] / total
 
     return dic
 
@@ -75,11 +79,11 @@ def category_probability(df):
 def calculate_frequencies(category_dic, word_dic):
     for category in category_dic:
         for word in category_dic[category]:
-            category_dic[category][word] = category_dic[category][word]/word_dic[word]
+            category_dic[category][word] = category_dic[category][word] / word_dic[word]
 
 
 def laplace(val, total, k):
-    return (val+1)/(total+k)
+    return (val + 1) / (total + k)
 
 
 def classify(data, category_dic, word_dic, category_frecuency, categoria):
@@ -94,33 +98,100 @@ def classify(data, category_dic, word_dic, category_frecuency, categoria):
                 if word in word_dic:
                     category_probabilities[category] *= laplace(0, word_dic[word], len(category_dic))
                 else:
-                    category_probabilities[category] *= (1/len(category_dic))
+                    category_probabilities[category] *= (1 / len(category_dic))
             else:
-                category_probabilities[category] *= laplace(category_dic[category][word], word_dic[word], len(category_dic))
+                category_probabilities[category] *= laplace(category_dic[category][word], word_dic[word],
+                                                            len(category_dic))
 
         category_probabilities[category] *= category_frecuency[category]
         sum += category_probabilities[category]
 
-    print(category_probabilities, "\n", max(category_probabilities, key=category_probabilities.get), category_probabilities[categoria]/sum)
-    if categoria == max(category_probabilities, key=category_probabilities.get):
-        return True
-    else:
-        return False
+    # print(category_probabilities, "\n", max(category_probabilities, key=category_probabilities.get), category_probabilities[categoria]/sum)
+    return max(category_probabilities, key=category_probabilities.get)
+
 
 def test_samples(dfTest, category_dic, word_dic, category_frecuency):
     hit = 0.0
     for index, row in dfTest.iterrows():
         if classify(row.titular, category_dic, word_dic, category_frecuency, row.categoria):
             hit += 1
-    return hit/len(dfTest.index)
+    return hit / len(dfTest.index)
 
-#dfTest, dfTrain = read_news(0.10)
+
+def create_confusion_array(dfTest, category_dic, word_dic, category_frecuency):
+    array = [[0 for y in range(len(dfTest['categoria'].unique()))] for x in range(len(dfTest['categoria'].unique()))]
+    category_hash = {}
+    i = 0
+    for category in dfTest['categoria'].unique():
+        category_hash[category] = i
+        i += 1
+
+    for index, row in dfTest.iterrows():
+        expected_value = row.categoria
+        recived_value = classify(row.titular, category_dic, word_dic, category_frecuency, row.categoria)
+        array[category_hash[expected_value]][category_hash[recived_value]] += 1
+    return array
+
+
+def confusion_matrix(dfTest, category_dic, word_dic, category_frecuency):
+    array = create_confusion_array(dfTest, category_dic, word_dic, category_frecuency)
+    df_cm = pd.DataFrame(array, index=[i for i in dfTest['categoria'].unique()],
+                         columns=[i for i in dfTest['categoria'].unique()])
+    plt.figure(figsize=(10, 7))
+    sn.heatmap(df_cm, annot=True)
+    plt.show()
+    return array
+
+
+def accuracy(array, categories):
+    TP = 0
+    FP = 0
+    TN = 0
+    FN = 0
+    category_hash = {}
+    i = 0
+    for category in dfTest['categoria'].unique():
+        category_hash[category] = i
+        i += 1
+
+    category_accuracy = {}
+    category_precision = {}
+    category_f1 = {}
+    category_recall = {}
+    category_tp_rate = {}
+    category_fp_rate = {}
+    for category in categories:
+        for i in range(len(array)):
+            for j in range(len(array[i])):
+                if i == j:
+                    if category_hash[category] == i:
+                        TP += array[i][j]
+                    else:
+                        TN += array[i][j]
+                else:
+                    if category_hash[category] == i:
+                        FN += array[i][j]
+                    if category_hash[category] == j:
+                        FP += array[i][j]
+        category_accuracy[category] = (TP + TN) / (TP + TN + FP + FN)
+        category_precision[category] = TP / (TP + FP)
+        category_recall[category] = TP / (TP + FN)
+        category_f1[category] = (2 * category_recall[category] * category_precision[category]) /\
+                                (category_precision[category] + category_recall[category])
+        category_tp_rate[category] = TP / (TP + FN)
+        category_fp_rate[category] = FP / (FP + TN)
+        print("acuracy of ", category, category_accuracy[category])
+        print("precision of ", category, category_precision[category])
+
+
+dfTest, dfTrain = read_news(0.10)
 df = pd.read_csv("test.csv")
 dfTest = pd.read_csv("testSample.csv")
 dfTrain = pd.read_csv("trainSample.csv")
 dictionaries = make_structures(dfTrain)
 calculate_frequencies(dictionaries[0], dictionaries[1])
-hitPercentage = test_samples(dfTest, dictionaries[0], dictionaries[1], category_probability(df))
-print("hit percentage", hitPercentage)
-#classify("Ponsha juega al fútbol y ataja pelotas", dictionaries[0], dictionaries[1], category_probability(df))
-
+#hitPercentage = test_samples(dfTest, dictionaries[0], dictionaries[1], category_probability(df))
+array = confusion_matrix(dfTest, dictionaries[0], dictionaries[1], category_probability(df))
+accuracy(array, dfTest['categoria'].unique())
+#print("hit percentage", hitPercentage)
+# classify("Ponsha juega al fútbol y ataja pelotas", dictionaries[0], dictionaries[1], category_probability(df))
