@@ -1,8 +1,20 @@
 import pandas as pd
 import string
 
+def splitDf(percentage_test, df):
+    grouped = df.groupby(df.categoria)
+    dfTest = pd.DataFrame()
+    dfTrain = pd.DataFrame()
+    for group in grouped.groups:
+        dfTemp = grouped.get_group(group)
+        dfTempTest = dfTemp.sample(frac=percentage_test)
+        dfTest = pd.concat([dfTest, dfTempTest])
+        dfTempTrain = dfTemp.drop(dfTempTest.index)
+        dfTrain = pd.concat([dfTrain, dfTempTrain])
+    return dfTest, dfTrain
 
-def read_news():
+
+def read_news(percentage_test):
     df = pd.read_excel("resources/ejercicio2.xlsx")
     df = df.loc[:, 'titular':'categoria']
     index_names = df[df['categoria'] == "Noticias destacadas"].index
@@ -10,8 +22,10 @@ def read_news():
     index_names = df[df['categoria'] == "Destacadas"].index
     df.drop(index_names, inplace=True)
     df.dropna(subset = ["categoria"], inplace=True)
-    df.to_csv("test.csv", encoding='utf-8')
-    return df
+    dfTest, dfTrain = splitDf(percentage_test, df)
+    dfTest.to_csv("testSample.csv", encoding='utf-8')
+    dfTrain.to_csv("trainSample.csv", encoding='utf-8')
+    return dfTest, dfTrain
 
 
 def make_structures(df):
@@ -68,7 +82,7 @@ def laplace(val, total, k):
     return (val+1)/(total+k)
 
 
-def classify(data, category_dic, word_dic, category_frecuency):
+def classify(data, category_dic, word_dic, category_frecuency, categoria):
     category_probabilities = {}
     sum = 0
 
@@ -87,12 +101,26 @@ def classify(data, category_dic, word_dic, category_frecuency):
         category_probabilities[category] *= category_frecuency[category]
         sum += category_probabilities[category]
 
-    print(category_probabilities, "\n", max(category_probabilities, key=category_probabilities.get), category_probabilities["Deportes"]/sum)
+    print(category_probabilities, "\n", max(category_probabilities, key=category_probabilities.get), category_probabilities[categoria]/sum)
+    if categoria == max(category_probabilities, key=category_probabilities.get):
+        return True
+    else:
+        return False
 
+def test_samples(dfTest, category_dic, word_dic, category_frecuency):
+    hit = 0.0
+    for index, row in dfTest.iterrows():
+        if classify(row.titular, category_dic, word_dic, category_frecuency, row.categoria):
+            hit += 1
+    return hit/len(dfTest.index)
 
-#df = read_news()
+#dfTest, dfTrain = read_news(0.10)
 df = pd.read_csv("test.csv")
-dictionaries = make_structures(df)
+dfTest = pd.read_csv("testSample.csv")
+dfTrain = pd.read_csv("trainSample.csv")
+dictionaries = make_structures(dfTrain)
 calculate_frequencies(dictionaries[0], dictionaries[1])
-classify("Ponsha juega al fútbol y ataja pelotas", dictionaries[0], dictionaries[1], category_probability(df))
+hitPercentage = test_samples(dfTest, dictionaries[0], dictionaries[1], category_probability(df))
+print("hit percentage", hitPercentage)
+#classify("Ponsha juega al fútbol y ataja pelotas", dictionaries[0], dictionaries[1], category_probability(df))
 
