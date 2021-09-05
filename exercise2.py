@@ -173,6 +173,8 @@ def accuracy(array, categories):
                         FN += array[i][j]
                     if category_hash[category] == j:
                         FP += array[i][j]
+                    else:
+                        TN += array[i][j]
         category_accuracy[category] = (TP + TN) / (TP + TN + FP + FN)
         category_precision[category] = TP / (TP + FP)
         category_recall[category] = TP / (TP + FN)
@@ -187,7 +189,7 @@ def accuracy(array, categories):
         print("tp rate: ", category_tp_rate[category])
         print("fp rate: ", category_fp_rate[category])
         print("\n")
-        return category_accuracy, category_precision, category_recall, category_f1, category_tp_rate, category_fp_rate
+    return category_accuracy, category_precision, category_recall, category_f1, category_tp_rate, category_fp_rate
 
 dfTest, dfTrain = read_news(0.10)
 df = pd.read_csv("test.csv")
