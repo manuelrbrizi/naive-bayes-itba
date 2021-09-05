@@ -138,7 +138,7 @@ def confusion_matrix(dfTest, category_dic, word_dic, category_frecuency):
     df_cm = pd.DataFrame(array, index=[i for i in dfTest['categoria'].unique()],
                          columns=[i for i in dfTest['categoria'].unique()])
     plt.figure(figsize=(10, 7))
-    sn.heatmap(df_cm, annot=True)
+    sn.heatmap(df_cm, annot=True, cmap="Blues")
     plt.show()
     return array
 
@@ -160,6 +160,10 @@ def accuracy(array, categories):
     category_recall = {}
     category_tp_rate = {}
     category_fp_rate = {}
+    category_tp = {}
+    category_fp = {}
+    category_tn = {}
+    category_fn = {}
     for category in categories:
         for i in range(len(array)):
             for j in range(len(array[i])):
@@ -175,6 +179,11 @@ def accuracy(array, categories):
                         FP += array[i][j]
                     else:
                         TN += array[i][j]
+
+        category_tp[category] = TP
+        category_fp[category] = FP
+        category_tn[category] = TN
+        category_fn[category] = FN
         category_accuracy[category] = (TP + TN) / (TP + TN + FP + FN)
         category_precision[category] = TP / (TP + FP)
         category_recall[category] = TP / (TP + FN)
@@ -189,7 +198,8 @@ def accuracy(array, categories):
         print("tp rate: ", category_tp_rate[category])
         print("fp rate: ", category_fp_rate[category])
         print("\n")
-    return category_accuracy, category_precision, category_recall, category_f1, category_tp_rate, category_fp_rate
+    return category_accuracy, category_precision, category_recall, category_f1, category_tp_rate, category_fp_rate,\
+           category_tp, category_fp, category_tn, category_fn
 
 dfTest, dfTrain = read_news(0.10)
 df = pd.read_csv("test.csv")
@@ -202,3 +212,6 @@ array = confusion_matrix(dfTest, dictionaries[0], dictionaries[1], category_prob
 accuracy(array, dfTest['categoria'].unique())
 #print("hit percentage", hitPercentage)
 # classify("Ponsha juega al fútbol y ataja pelotas", dictionaries[0], dictionaries[1], category_probability(df))
+
+
+
