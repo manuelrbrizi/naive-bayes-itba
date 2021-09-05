@@ -192,7 +192,9 @@ def accuracy(array, categories):
         category_recall[category] = TP / (TP + FN)
         category_f1[category] = (2 * category_recall[category] * category_precision[category]) /\
                                 (category_precision[category] + category_recall[category])
+        #tasa de verdaderos positivos
         category_tp_rate[category] = TP / (TP + FN)
+        #tasa de falsos positivos
         category_fp_rate[category] = FP / (FP + TN)
         print(category, ":")
         print("acuracy: ", category_accuracy[category])
@@ -201,8 +203,15 @@ def accuracy(array, categories):
         print("tp rate: ", category_tp_rate[category])
         print("fp rate: ", category_fp_rate[category])
         print("\n")
+    plt.figure(figsize=(15, 7))
+    plt.scatter(category_tp_rate[category],category_fp_rate[category], color='#0F9D58', s=100)
+    plt.title('ROC Curve', fontsize=20)
+    plt.xlabel('False Positive Rate', fontsize=16)
+    plt.ylabel('True Positive Rate', fontsize=16)
+    plt.show()
     return category_accuracy, category_precision, category_recall, category_f1, category_tp_rate, category_fp_rate,\
            category_tp, category_fp, category_tn, category_fn
+
 
 dfTest, dfTrain = read_news(0.10)
 df = pd.read_csv("test.csv")
@@ -213,8 +222,9 @@ calculate_frequencies(dictionaries[0], dictionaries[1])
 #hitPercentage = test_samples(dfTest, dictionaries[0], dictionaries[1], category_probability(df))
 array = confusion_matrix(dfTest, dictionaries[0], dictionaries[1], category_probability(df))
 accuracy(array, dfTest['categoria'].unique())
+
 #print("hit percentage", hitPercentage)
 # classify("Ponsha juega al fútbol y ataja pelotas", dictionaries[0], dictionaries[1], category_probability(df))
 
-
+accuracy(array, dfTest['categoria'].unique())
 
