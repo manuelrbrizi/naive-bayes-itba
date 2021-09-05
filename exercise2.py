@@ -130,6 +130,7 @@ def create_confusion_array(dfTest, category_dic, word_dic, category_frecuency):
         expected_value = row.categoria
         recived_value = classify(row.titular, category_dic, word_dic, category_frecuency, row.categoria)
         array[category_hash[expected_value]][category_hash[recived_value]] += 1
+
     return array
 
 
@@ -137,8 +138,10 @@ def confusion_matrix(dfTest, category_dic, word_dic, category_frecuency):
     array = create_confusion_array(dfTest, category_dic, word_dic, category_frecuency)
     df_cm = pd.DataFrame(array, index=[i for i in dfTest['categoria'].unique()],
                          columns=[i for i in dfTest['categoria'].unique()])
-    plt.figure(figsize=(10, 7))
+    ax = plt.figure(figsize=(10, 7))
     sn.heatmap(df_cm, annot=True, cmap="Blues")
+    plt.xlabel("Predicted")
+    plt.ylabel("Ground Truth")
     plt.show()
     return array
 
